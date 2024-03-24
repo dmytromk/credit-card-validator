@@ -1,0 +1,8 @@
+version: "1"
+services:
+  cardvalidator:
+    build: .
+    ports:
+      - "5001:5001"
+    volumes:
+      - ./src:/app

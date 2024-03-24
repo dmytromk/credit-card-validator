@@ -1,8 +1,8 @@
 from fastapi import FastAPI
 from pydantic import ValidationError
 
-from src.models.api_response import ValidationResponse
-from src.models.card import Card
+from models.api_response import ValidationResponse
+from models.card import Card
 
 app = FastAPI()
 
