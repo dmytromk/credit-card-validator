@@ -2,8 +2,9 @@ from calendar import monthrange
 from datetime import date
 from enum import Enum
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator, StringConstraints
 from pydantic_core import PydanticCustomError
+from typing_extensions import Annotated
 
 
 class CardIssuer(Enum):
@@ -13,12 +14,16 @@ class CardIssuer(Enum):
 
 
 class Card(BaseModel):
-    card_number: str = Field(alias="Card number", strip_whitespace=True)
-    expiration_month: str = Field(alias="Expiration month", strip_whitespace=True, pattern="^(0?[1-9]|1[012])$")  # allows leading zeroes
-    expiration_year: str = Field(alias="Expiration year", strip_whitespace=True, pattern="^(19|20)\d{2}$")  # 1900-2099
+    card_number: Annotated[str, Field(alias="Card number")]
+
+    expiration_month: Annotated[str, Field(alias="Expiration month"),
+    StringConstraints(strip_whitespace=True, pattern="^(0?[1-9]|1[012])$")]  # 01-12
+
+    expiration_year: Annotated[str, Field(alias="Expiration year"),
+    StringConstraints(strip_whitespace=True, pattern="^(19|20)\d{2}$")]  # 1900-2099
 
     @model_validator(mode="after")
-    def check_card_number_omitted(self) -> "Card":
+    def check_card_expiration(self) -> "Card":
         month, year = int(self.expiration_month), int(self.expiration_year)
 
         if date.today() > date(year, month, monthrange(year, month)[-1]):
@@ -26,8 +31,10 @@ class Card(BaseModel):
 
         return self
 
-    @field_validator("card_number")
+    @field_validator("card_number", mode="after")
     def validate_card_number(cls, v: str) -> str:
+        v = v.strip()
+
         if not v.isdigit():
             raise PydanticCustomError("card_number_digits", "Card number must contain digits and only digits")
 
